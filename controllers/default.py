@@ -9,6 +9,7 @@
 #########################################################################
 
 def index():
+    # index should list all of the available users
   images = db(db.image).select()
   posts = db(db.post).select()
   users = db(db.user).select()
@@ -16,10 +17,24 @@ def index():
   form = SQLFORM(db.image).process()
   return dict(images=images, users=users, posts=posts, comments=comments)
 
-# def show():
-#     image = db.image(request.args(0,cast=int)) or redirect(URL('index'))
-#     db.user.photo_id.default = image.id
-#     return dict(image=image, comments=comments, form=form)
+def create():
+    #add a new blog post
+
+def show():
+    #show a users blog and its comments, and add new comments
+
+def edit():
+    #edit an existing blog
+
+def documents():
+    #manage the blog entries attached to the page
+
+def search():
+    #display a search box and, via an ajax callback, return all matching titles as the user types
+
+def callback():
+    # this is the ajax callback function. It returns the html that gets embeded in the search page
+    # while the visitor types
 
 def user():
     """
@@ -53,3 +68,8 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
+
+@auth.requires_membership('manager')
+def manage():
+    grid = SQLFORM.smartgrid(db.image, linked_tables=["user"])
+    return dict(grid=grid)
