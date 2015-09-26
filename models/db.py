@@ -11,6 +11,10 @@
 
 db = DAL("sqlite://storage.sqlite")
 
+from gluon.tools import *
+auth = Auth(db)
+auth.define_tables(username=True)
+
 db.define_table("image",
     Field("title", unique=True),
     Field("file", "upload"),
@@ -20,15 +24,16 @@ db.define_table("username",
     Field("user_name", unique=True))
 
 db.define_table("comment",
-    Field("author"),
+    Field("post_id", "reference blogpost"),
     Field("body"),
-    Field("date", "datetime"))
+    Field("created_on", "datetime", default=request.now),
+    Field("created_by", "reference auth_user", default=auth.user_id))
 
-db.define_table("post",
+db.define_table("blogpost",
     Field("title"),
     Field("body", "text"),
-    Field("author", "reference username"),
-    Field("date", "datetime"),
+    Field("created_by", "reference username"),
+    Field("created_on", "datetime", default=request.now),
     Field("comments", "list:reference comment"),
     Field("tags", "list:string"))
 
@@ -43,8 +48,34 @@ db.define_table("user",
     Field("username", "reference username"),
     Field("email", unique=True),
     Field("photo_id", "reference image"),
-    Field("post", "list:reference post"),
+    Field("blogpost", "list:reference blogpost"),
     Field("club", "reference club"))
 
+db.define_table('document',
+    Field('blogpost_id', 'reference blogpost'),
+    Field('name'),
+    Field('file', 'upload'),
+    Field('created_on', 'datetime', default=request.now),
+    Field('created_by', 'reference auth_user', default=auth.user_id),
+    format='%(name)s')
+
+db.user.first_name.requires = IS_NOT_EMPTY()
+db.user.last_name.requires = IS_NOT_EMPTY()
+db.user.email.requires = IS_NOT_EMPTY()
 db.user.photo_id.requires = IS_IN_DB(db, db.image.id, "%(title)s")
 db.user.photo_id.writable = db.user.photo_id.readable = False
+
+db.blogpost.title.requires = IS_NOT_IN_DB(db, 'page.title')
+db.blogpost.body.requires = IS_NOT_EMPTY()
+db.blogpost.created_by.readable = db.blogpost.created_by.writable = False
+db.blogpost.created_on.readable = db.blogpost.created_on.writable = False
+
+db.comment.body.requires = IS_NOT_EMPTY()
+db.comment.post_id.readable = db.comment.post_id.writable = False
+db.comment.created_by.readable = db.comment.created_by.writable = False
+db.comment.created_on.readable = db.comment.created_on.writable = False
+
+db.document.name.requires = IS_NOT_IN_DB(db, 'document.name')
+db.document.page_id.readable = db.document.page_id.writable = False
+db.document.created_by.readable = db.document.created_by.writable = False
+db.document.created_on.readable = db.document.created_on.writable = False
